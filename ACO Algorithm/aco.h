@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+using namespace std;
 
 //  Ant Colony Optimization — How It Works
 
@@ -29,14 +30,14 @@ struct AcoParams {
 };
 
 struct AcoResult {
-    std::vector<int> path;        // sequence of node indices from start to goal
+    vector<int> path;        // sequence of node indices from start to goal
     double           totalCost;   // sum of Manhattan distances along the path
     int              iterations;  // how many iterations were run
 };
 
 class AntColonyOptimization {
 public:
-    AntColonyOptimization(const std::vector<Node>& graph,
+    AntColonyOptimization(const vector<Node>& graph,
                           int startNode,
                           int goalNode,
                           const AcoParams& params = AcoParams{})
@@ -44,7 +45,7 @@ public:
           start_(startNode),
           goal_(goalNode),
           params_(params),
-          rng_(std::random_device{}())
+          rng_(random_device{}())
     {
         initPheromones();
     }
@@ -52,17 +53,17 @@ public:
     // Run the ACO and return the best path found.
     AcoResult run() {
         AcoResult best;
-        best.totalCost = std::numeric_limits<double>::infinity();
+        best.totalCost = numeric_limits<double>::infinity();
         best.iterations = params_.numIterations;
 
         for (int iter = 0; iter < params_.numIterations; ++iter) {
 
             // Each ant constructs a tour
-            std::vector<std::vector<int>> allPaths;
-            std::vector<double>           allCosts;
+            vector<vector<int>> allPaths;
+            vector<double>           allCosts;
 
             for (int ant = 0; ant < params_.numAnts; ++ant) {
-                std::vector<int> path;
+                vector<int> path;
                 double cost = 0.0;
                 if (constructTour(path, cost)) {
                     allPaths.push_back(path);
@@ -80,7 +81,7 @@ public:
             depositPheromones(allPaths, allCosts);
 
             if ((iter + 1) % 50 == 0) {
-                std::cout << "  Iteration " << (iter + 1)
+                cout << "  Iteration " << (iter + 1)
                           << " | Best so far: " << best.totalCost << "\n";
             }
         }
@@ -89,14 +90,14 @@ public:
     }
 
 private:
-    const std::vector<Node>& graph_;
+    const vector<Node>& graph_;
     int                      start_;
     int                      goal_;
     AcoParams                params_;
-    std::mt19937             rng_;
+    mt19937             rng_;
 
     // pheromone_[u][i] = pheromone on edge from u to u's i-th neighbor
-    std::vector<std::vector<double>> pheromone_;
+    vector<vector<double>> pheromone_;
 
     void initPheromones() {
         pheromone_.resize(graph_.size());
@@ -105,8 +106,8 @@ private:
         }
     }
 
-    bool constructTour(std::vector<int>& path, double& cost) {
-        std::vector<bool> visited(graph_.size(), false);
+    bool constructTour(vector<int>& path, double& cost) {
+        vector<bool> visited(graph_.size(), false);
         path.clear();
         cost = 0.0;
 
@@ -132,13 +133,13 @@ private:
         return (current == goal_);
     }
 
-    int chooseNext(int current, const std::vector<bool>& visited) {
+    int chooseNext(int current, const vector<bool>& visited) {
         const auto& neighbors = graph_[current].neighbors;
         if (neighbors.empty()) return -1;
 
         // Compute unnormalized weights for each allowed neighbor
-        std::vector<double> weights;
-        std::vector<int>    candidates;
+        vector<double> weights;
+        vector<int>    candidates;
 
         for (size_t i = 0; i < neighbors.size(); ++i) {
             int v = neighbors[i];
@@ -150,8 +151,8 @@ private:
             double tau = pheromone_[current][i];
             double eta = 1.0 / dist;   // heuristic: shorter edge is better
 
-            double weight = std::pow(tau, params_.phInfluence) *
-                            std::pow(eta, params_.distInfluence);
+            double weight = pow(tau, params_.phInfluence) *
+                            pow(eta, params_.distInfluence);
 
             candidates.push_back(v);
             weights.push_back(weight);
@@ -160,7 +161,7 @@ private:
         if (candidates.empty()) return -1;
 
         // Roulette-wheel selection
-        std::discrete_distribution<int> dist(weights.begin(), weights.end());
+        discrete_distribution<int> dist(weights.begin(), weights.end());
         return candidates[dist(rng_)];
     }
 
@@ -173,8 +174,8 @@ private:
         }
     }
 
-    void depositPheromones(const std::vector<std::vector<int>>& paths,
-                           const std::vector<double>&           costs)
+    void depositPheromones(const vector<vector<int>>& paths,
+                           const vector<double>&           costs)
     {
         for (size_t a = 0; a < paths.size(); ++a) {
             double deposit = params_.Q / costs[a];

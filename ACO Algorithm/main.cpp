@@ -15,18 +15,18 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     // Determine the data file path from the command line, or use default
-    std::string dataFile = "thePoints.dat";
+    string dataFile = "thePoints.dat";
     if (argc >= 2) {
         dataFile = argv[1];
     }
 
     //loads graph
-    std::vector<Node> graph;
+    vector<Node> graph;
     try {
         graph = loadGraph(dataFile);
-    } catch (const std::exception& e) {
-        std::cerr << "Error loading graph: " << e.what() << "\n";
-        std::cerr << "Make sure you have run dataGeneration first to produce "
+    } catch (const exception& e) {
+        cerr << "Error loading graph: " << e.what() << "\n";
+        cerr << "Make sure you have run dataGeneration first to produce "
                   << dataFile << ".\n";
         return 1;
     }

@@ -12,7 +12,7 @@
 
 using namespace std;
 
-//graphs
+// ===================== GRAPH =====================
 
 struct Node {
     int x, y;
@@ -50,14 +50,10 @@ vector<Node> loadGraph(const string& filePath) {
         graph.push_back(node);
     }
 
-    if (graph.empty()) {
-        throw runtime_error("Graph file is empty or could not be parsed.");
-    }
-
     return graph;
 }
 
-//aco
+// ===================== ACO =====================
 
 struct AcoParams {
     int numAnts = 30;
@@ -71,8 +67,8 @@ struct AcoParams {
 
 struct AcoResult {
     vector<int> path;
-    double totalCost;
-    int iterations;
+    int totalCost = 0;
+    int iterations = 0;
 };
 
 class AntColonyOptimization {
@@ -85,24 +81,25 @@ public:
 
     AcoResult run() {
         AcoResult best;
-        best.totalCost = numeric_limits<double>::infinity();
+        best.totalCost = numeric_limits<int>::max();
         best.iterations = params_.numIterations;
 
         for (int iter = 0; iter < params_.numIterations; ++iter) {
 
             vector<vector<int>> allPaths;
-            vector<double> allCosts;
+            vector<int> allCosts;
 
             for (int ant = 0; ant < params_.numAnts; ++ant) {
                 vector<int> path;
                 double cost = 0.0;
 
                 if (constructTour(path, cost)) {
+                    int icost = (int)cost;
                     allPaths.push_back(path);
-                    allCosts.push_back(cost);
+                    allCosts.push_back(icost);
 
-                    if (cost < best.totalCost) {
-                        best.totalCost = cost;
+                    if (icost < best.totalCost) {
+                        best.totalCost = icost;
                         best.path = path;
                     }
                 }
@@ -132,14 +129,15 @@ private:
 
     bool constructTour(vector<int>& path, double& cost) {
         vector<bool> visited(graph_.size(), false);
-        path.clear();
-        cost = 0.0;
 
         int current = start_;
+        path.clear();
+        cost = 0;
+
         path.push_back(current);
         visited[current] = true;
 
-        const int maxSteps = static_cast<int>(graph_.size()) * 2;
+        int maxSteps = graph_.size() * 2;
 
         for (int step = 0; step < maxSteps; ++step) {
             if (current == goal_) return true;
@@ -148,12 +146,13 @@ private:
             if (next == -1) return false;
 
             cost += manhattanDist(graph_[current], graph_[next]);
+
             visited[next] = true;
             path.push_back(next);
             current = next;
         }
 
-        return (current == goal_);
+        return current == goal_;
     }
 
     int chooseNext(int current, const vector<bool>& visited) {
@@ -168,11 +167,13 @@ private:
             if (visited[v]) continue;
 
             double dist = manhattanDist(graph_[current], graph_[v]);
-            if (dist <= 0.0) dist = 1e-9;
+            if (dist <= 0) dist = 1e-9;
 
             double tau = pheromone_[current][i];
             double eta = 1.0 / dist;
-            double weight = pow(tau, params_.phInfluence) * pow(eta, params_.distInfluence);
+
+            double weight = pow(tau, params_.phInfluence) *
+                            pow(eta, params_.distInfluence);
 
             candidates.push_back(v);
             weights.push_back(weight);
@@ -193,19 +194,20 @@ private:
         }
     }
 
-    void depositPheromones(const vector<vector<int>>& paths, const vector<double>& costs) {
+    void depositPheromones(const vector<vector<int>>& paths,
+                           const vector<int>& costs) {
         for (size_t a = 0; a < paths.size(); ++a) {
             double deposit = params_.Q / costs[a];
             const auto& path = paths[a];
 
-            for (size_t step = 0; step + 1 < path.size(); ++step) {
-                int u = path[step];
-                int v = path[step + 1];
+            for (size_t i = 0; i + 1 < path.size(); ++i) {
+                int u = path[i];
+                int v = path[i + 1];
 
                 const auto& nbrs = graph_[u].neighbors;
-                for (size_t i = 0; i < nbrs.size(); ++i) {
-                    if (nbrs[i] == v) {
-                        pheromone_[u][i] += deposit;
+                for (size_t j = 0; j < nbrs.size(); ++j) {
+                    if (nbrs[j] == v) {
+                        pheromone_[u][j] += deposit;
                         break;
                     }
                 }
@@ -214,26 +216,24 @@ private:
     }
 };
 
-// MAIN
+// ===================== MAIN =====================
 
 int main(int argc, char* argv[]) {
     string dataFile = "thePoints.dat";
-    if (argc >= 2) {
-        dataFile = argv[1];
-    }
+    if (argc >= 2) dataFile = argv[1];
 
     vector<Node> graph;
 
     try {
         graph = loadGraph(dataFile);
     } catch (const exception& e) {
-        cerr << "Error loading graph: " << e.what() << "\n";
+        cerr << "Error: " << e.what() << "\n";
         return 1;
     }
 
     AcoParams params;
-
     AntColonyOptimization aco(graph, 0, 299, params);
+
     AcoResult result = aco.run();
 
     ofstream outFile("results.txt");
@@ -242,11 +242,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    outFile << "Best path length: " << result.totalCost << "\n";
-
+    outFile << "Path:\n";
     for (int idx : result.path) {
-        outFile << idx << " (" << graph[idx].x << ", " << graph[idx].y << ")\n";
+        outFile << idx << " ";
     }
+
+    outFile << "\nTotal cost: " << result.totalCost << "\n";
 
     outFile.close();
     return 0;

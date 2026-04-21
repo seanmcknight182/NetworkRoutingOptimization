@@ -7,7 +7,7 @@ Team members: Eli DeSha, Sean Mcknight, Eric Ramirez
 
 ## Running the project
 Download the full source code for each algorithm. Then, open a terminal and navigate to the directory containing that algorithm’s code. Run the command:
-  **make full**
+  **make full**.
 This will compile the executables, generate the necessary data, run the algorithm, and then remove the compiled executables, leaving only the generated data and results.
 
 ## Generative AI Disclosure

@@ -8,19 +8,17 @@ using namespace std;
 
 struct Point {
     int x, y;
-    vector<int> neighbors; // dynamic instead of fixed 4
+    vector<int> neighbors;
 };
 
 struct Edge {
     int src, dst, weight;
 };
 
-// Manhattan distance
 int manhattanDist(const Point& a, const Point& b) {
     return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
-// Load graph from file
 bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edges) {
     ifstream file(filename);
     if (!file) {
@@ -30,14 +28,12 @@ bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edge
 
     points.clear();
 
-    // Read until EOF (no hardcoded 300)
     while (true) {
         Point p;
         int n1, n2, n3, n4;
 
         if (!(file >> p.x >> p.y >> n1 >> n2 >> n3 >> n4)) break;
 
-        p.neighbors.clear();
         if (n1 != -1) p.neighbors.push_back(n1);
         if (n2 != -1) p.neighbors.push_back(n2);
         if (n3 != -1) p.neighbors.push_back(n3);
@@ -46,7 +42,6 @@ bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edge
         points.push_back(p);
     }
 
-    // Build edges
     for (int i = 0; i < (int)points.size(); i++) {
         for (int j : points[i].neighbors) {
             int w = manhattanDist(points[i], points[j]);
@@ -57,7 +52,6 @@ bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edge
     return true;
 }
 
-// Bellman-Ford
 bool bellmanFord(const vector<Point>& points,
                  const vector<Edge>& edges,
                  int src,
@@ -71,6 +65,7 @@ bool bellmanFord(const vector<Point>& points,
 
     for (int i = 0; i < V - 1; i++) {
         bool updated = false;
+
         for (const Edge& e : edges) {
             if (dist[e.src] == INT_MAX) continue;
 
@@ -81,19 +76,21 @@ bool bellmanFord(const vector<Point>& points,
                 updated = true;
             }
         }
+
         if (!updated) break;
     }
 
     return true;
 }
 
-// Path reconstruction
 vector<int> reconstructPath(const vector<int>& pred, int src, int dst) {
     vector<int> path;
+
     for (int cur = dst; cur != -1; cur = pred[cur]) {
         path.push_back(cur);
         if (cur == src) break;
     }
+
     reverse(path.begin(), path.end());
 
     if (path.empty() || path[0] != src) return {};
@@ -107,7 +104,7 @@ int main() {
     if (!loadGraph("thePoints.dat", points, edges)) return 1;
 
     int SRC = 0;
-    int DST = points.size() - 1;
+    int DST = (int)points.size() - 1;
 
     vector<int> dist, pred;
 
@@ -117,21 +114,31 @@ int main() {
 
     double ms = chrono::duration<double, milli>(end - start).count();
 
-    cout << "Distance: " << dist[DST] << "\n";
-    cout << "Runtime: " << ms << " ms\n";
-
     vector<int> path = reconstructPath(pred, SRC, DST);
 
-    cout << "Path:\n";
-    for (int i = 0; i < (int)path.size(); i++) {
-        int idx = path[i];
-        cout << idx << " (" << points[idx].x << "," << points[idx].y << ")";
-        if (i + 1 < (int)path.size()) {
-            int nxt = path[i + 1];
-            cout << " -> ";
-        }
-        cout << "\n";
+    ofstream out("results.txt");
+    if (!out) {
+        cerr << "Error writing results.txt\n";
+        return 1;
     }
+
+    out << "Path:\n";
+
+    int totalCost = 0;
+
+    if (!path.empty()) {
+        for (size_t i = 0; i < path.size(); i++) {
+            out << path[i] << " ";
+
+            if (i + 1 < path.size()) {
+                totalCost += manhattanDist(points[path[i]], points[path[i + 1]]);
+            }
+        }
+    }
+
+    out << "\nTotal cost: " << totalCost << "\n";
+
+    out.close();
 
     return 0;
 }

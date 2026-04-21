@@ -1,1 +1,5 @@
-put references here
+https://www.geeksforgeeks.org/machine-learning/introduction-to-ant-colony-optimization/
+https://www.youtube.com/watch?v=1qpvpOHGRqA
+https://www.youtube.com/watch?v=783ZtAF4j5g
+https://www.youtube.com/watch?v=u7bQomllcJw&t=16s
+https://www.youtube.com/watch?v=qfeymoF8pb4&t=1s

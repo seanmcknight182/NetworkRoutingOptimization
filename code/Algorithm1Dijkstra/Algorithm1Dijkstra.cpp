@@ -4,12 +4,13 @@
 #include <cmath>
 #include <limits>
 #include <queue>
+#include <algorithm>
 
-// ChatGPT was a big help
 
 using namespace std;
 
 // This was much easier than the data generation, translating from psuedo code is basically a nothing burger task.
+// ChudGPT was a big help
 
 const int N = 300;
 
@@ -51,7 +52,11 @@ int main() {
         	    graph[i][degree[i]++] = {neighbor, 0};
         	}
     	}
+	
+	file.close(); // dont be a chump, close your files
+	
 
+	
 	// and now we compute the weights
     	for (int i = 0; i < N; i++) {
         	for (int j = 0; j < degree[i]; j++) {
@@ -92,6 +97,32 @@ int main() {
         	}
     	}
 
+
+	// the chud gpt output, tacked on after the fact beccause some dork forgot this.
+	//
+	// and it doesnt work the first time I try to compile it, chud gpt deserves its name.
+	
+	ofstream outputfile("BenchmarkResults.txt");
+
+	int target = 299;	//it was using a variable which didnt exist?
+    if (dist[target] == numeric_limits<int>::max()) {
+        cout << "No path exists from " << start << " to " << target << ".\n";
+    } else {
+        vector<int> path;
+        for (int v = target; v != -1; v = parent[v]) {
+            path.push_back(v);
+        }
+        reverse(path.begin(), path.end());	// this didnt work either?? 
+
+        outputfile << "Path: \n";
+        for (size_t i = 0; i < path.size(); i++) {
+            outputfile << path[i] << " ";
+        }
+        outputfile << '\n';
+
+        outputfile << "Total cost: " << dist[target] << '\n';
+    }
+	outputfile.close();
 
     return 0;
 }

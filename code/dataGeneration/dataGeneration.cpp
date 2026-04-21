@@ -144,16 +144,19 @@ public:
 					addEdge(i1, i3);
 					addEdge(i2, i1);
 					addEdge(i3, i1);
+					break;
 				case 2:
 					addEdge(i2, i1);
 					addEdge(i2, i3);
 					addEdge(i1, i2);
 					addEdge(i3, i2);
+					break;
 				case 3:
 					addEdge(i3, i1);
 					addEdge(i3, i2);
 					addEdge(i1, i3);
 					addEdge(i2, i3);
+					break;
 			}
 		}
 		for(int i = 0; i < 105; i++){

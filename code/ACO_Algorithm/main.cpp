@@ -12,7 +12,7 @@
 
 using namespace std;
 
-// ===================== GRAPH =====================
+//graphs
 
 struct Node {
     int x, y;
@@ -57,7 +57,7 @@ vector<Node> loadGraph(const string& filePath) {
     return graph;
 }
 
-// ===================== ACO =====================
+//aco
 
 struct AcoParams {
     int numAnts = 30;
@@ -214,7 +214,7 @@ private:
     }
 };
 
-// ===================== MAIN =====================
+// MAIN
 
 int main(int argc, char* argv[]) {
     string dataFile = "thePoints.dat";

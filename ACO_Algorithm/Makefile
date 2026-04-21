@@ -33,8 +33,8 @@ aco$(EXE): main.cpp graph.h aco.h
  
 # Generate the graph then immediately run ACO against it
 run: dataGeneration$(EXE) aco$(EXE)
-	dataGeneration$(EXE)
-	aco$(EXE) thePoints.dat
+	.\dataGeneration$(EXE)
+	.\aco$(EXE) thePoints.dat
  
 clean:
 	$(RM) dataGeneration$(EXE) aco$(EXE) thePoints.dat

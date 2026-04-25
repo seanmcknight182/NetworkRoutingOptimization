@@ -1,5 +1,7 @@
 import os
 import re
+import csv
+import matplotlib.pyplot as plt
 
 ALGO_DIRS = [
     "ACO_Algorithm",
@@ -8,67 +10,77 @@ ALGO_DIRS = [
     "Bellman_Ford_Algorithm"
 ]
 
-RESULT_FILE = "results.txt"
+# Example filenames: results_50.csv, results_100.csv
+FILE_PATTERN = r"results_(\d+)\.csv"
 
 
-def parse_results(filepath):
-    if not os.path.exists(filepath):
-        print(f"Missing: {filepath}")
-        return None
-
+def parse_metrics(filepath):
     with open(filepath, "r") as f:
-        content = f.read()
+        reader = csv.DictReader(f)
+        row = next(reader)  # Only one row expected
 
-    # Extract path line
-    path_match = re.search(r"Path:\s*([\d\s]+)", content)
-    path = None
-    if path_match:
-        path = list(map(int, path_match.group(1).strip().split()))
+        return {
+            "time": int(row["time_ms"]),
+            "ops": int(row["basic_op_count"]),
+            "weight": int(row["weight"])
+        }
 
-    # Extract total cost
-    cost_match = re.search(r"Total cost:\s*(\d+)", content)
-    cost = int(cost_match.group(1)) if cost_match else None
 
-    return {
-        "path": path,
-        "cost": cost
-    }
+def collect_data():
+    data = {}
+
+    for algo in ALGO_DIRS:
+        algo_data = []
+        if not os.path.exists(algo):
+            continue
+
+        for file in os.listdir(algo):
+            match = re.match(FILE_PATTERN, file)
+            if match:
+                num_points = int(match.group(1))
+                filepath = os.path.join(algo, file)
+
+                metrics = parse_metrics(filepath)
+                algo_data.append((num_points, metrics))
+
+        # Sort by number of points
+        algo_data.sort(key=lambda x: x[0])
+        data[algo] = algo_data
+
+    return data
+
+
+def plot_metric(data, metric_key, ylabel, filename):
+    plt.figure()
+
+    for algo, values in data.items():
+        x = [v[0] for v in values]
+        y = [v[1][metric_key] for v in values]
+
+        plt.plot(x, y, marker='o', label=algo)
+
+    plt.xlabel("Number of Points")
+    plt.ylabel(ylabel)
+    plt.title(f"{ylabel} vs Number of Points")
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig(filename)
+    plt.close()
 
 
 def main():
-    results = {}
+    data = collect_data()
 
-    for algo in ALGO_DIRS:
-        path = os.path.join(algo, RESULT_FILE)
-        parsed = parse_results(path)
+    if not data:
+        print("No data found.")
+        return
 
-        if parsed:
-            results[algo] = parsed
+    plot_metric(data, "time", "Time (ms)", "time_plot.png")
+    plot_metric(data, "ops", "Basic Operation Count", "ops_plot.png")
+    plot_metric(data, "weight", "Weight", "weight_plot.png")
 
-    print("\n=== Algorithm Comparison ===\n")
-    print(f"{'Algorithm':25} {'Cost':10} {'Path Length':12}")
-    print("-" * 55)
-
-    for algo, data in results.items():
-        cost = data["cost"] if data["cost"] is not None else "N/A"
-        length = len(data["path"]) if data["path"] else "N/A"
-
-        print(f"{algo:25} {cost:<10} {length:<12}")
-
-    # Rank by cost (lower is better)
-    valid = [(a, d["cost"]) for a, d in results.items() if d["cost"] is not None]
-
-    if valid:
-        sorted_algos = sorted(valid, key=lambda x: x[1])
-
-        print("\n=== Best to Worst (by cost) ===")
-        for i, (algo, cost) in enumerate(sorted_algos, 1):
-            print(f"{i}. {algo} ({cost})")
-
-        print(f"\nBest algorithm: {sorted_algos[0][0]}")
-
-    else:
-        print("\nNo valid cost data found.")
+    print("Graphs saved: time_plot.png, ops_plot.png, weight_plot.png")
 
 
 if __name__ == "__main__":

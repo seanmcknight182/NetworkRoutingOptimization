@@ -10,77 +10,72 @@
 
 #include <bits/stdc++.h>
 using namespace std;
+using namespace chrono;
 
-// Represents a point (node) in the graph
+// Node structure
 struct Node {
     int id;
     double x, y;
 };
 
-// Represents an edge between nodes
+// Edge structure
 struct Edge {
-    int to;          // destination node index
-    double weight;   // cost to travel
+    int to;
+    double weight;
 };
 
-// Graph is an adjacency list: each node has a list of edges
 using Graph = vector<vector<Edge>>;
 
-// Heuristic function (straight-line distance between two nodes)
-// Used by A* to estimate distance to goal
+// Heuristic (Euclidean distance)
 double heuristic(const Node& a, const Node& b) {
     return sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
 }
 
-// A* pathfinding algorithm
-pair<vector<int>, double> astar(Graph& graph, vector<Node>& nodes, int start, int goal) {
+// A* with operation counting
+tuple<vector<int>, double, long long> astar(Graph& graph, vector<Node>& nodes, int start, int goal) {
     int n = graph.size();
 
-    // g = cost from start to node
-    // f = g + heuristic estimate to goal
     vector<double> g(n, 1e18);
     vector<double> f(n, 1e18);
-
-    // used to reconstruct path
     vector<int> parent(n, -1);
 
-    // priority queue (min-heap based on f score)
     priority_queue<pair<double,int>, vector<pair<double,int>>, greater<>> pq;
 
-    // initialize start node
+    long long ops = 0;
+
     g[start] = 0;
     f[start] = heuristic(nodes[start], nodes[goal]);
     pq.push({f[start], start});
 
-    // main A* loop
     while (!pq.empty()) {
+        ops++;
+
         int current = pq.top().second;
         pq.pop();
 
-        // if we reached the goal, reconstruct path
         if (current == goal) {
             vector<int> path;
 
-            for (int v = goal; v != -1; v = parent[v])
+            for (int v = goal; v != -1; v = parent[v]) {
                 path.push_back(v);
+                ops++;
+            }
 
             reverse(path.begin(), path.end());
-            return {path, g[goal]};
+            return {path, g[goal], ops};
         }
 
-        // explore neighbors
         for (auto &edge : graph[current]) {
-            int nb = edge.to;
+            ops++;
 
-            // cost to reach neighbor through current node
+            int nb = edge.to;
             double tentative = g[current] + edge.weight;
 
-            // if this path is better, update it
             if (tentative < g[nb]) {
+                ops++;
+
                 g[nb] = tentative;
                 parent[nb] = current;
-
-                // f = actual cost + estimated remaining cost
                 f[nb] = tentative + heuristic(nodes[nb], nodes[goal]);
 
                 pq.push({f[nb], nb});
@@ -88,29 +83,21 @@ pair<vector<int>, double> astar(Graph& graph, vector<Node>& nodes, int start, in
         }
     }
 
-    // no path found
-    return {{}, -1};
+    return {{}, -1, ops};
 }
 
 int main() {
-    ifstream file("thePoints.dat");   // input graph data
-    ofstream out("results.txt");      // output results
+    ifstream file("thePoints.dat");
 
-    // check file opened correctly
     if (!file) {
         cout << "Error opening input file\n";
         return 1;
     }
 
-    if (!out) {
-        cout << "Error creating output file\n";
-        return 1;
-    }
+    vector<Node> nodes;
+    vector<vector<int>> rawConnections;
 
-    vector<Node> nodes;                  // list of nodes
-    vector<vector<int>> rawConnections;  // temporary edge list
-
-    // PASS 1: read all nodes and raw connections from file
+    // Read input
     while (true) {
         int x, y, t1, t2, t3, t4;
 
@@ -128,16 +115,12 @@ int main() {
 
     file.close();
 
-    // PASS 2: build adjacency list graph
+    // Build graph
     Graph graph(nodes.size());
 
     for (int i = 0; i < nodes.size(); i++) {
         for (int nb : rawConnections[i]) {
-
-            // ignore invalid connections
             if (nb >= 0 && nb < nodes.size()) {
-
-                // compute Euclidean distance as edge weight
                 double dx = nodes[i].x - nodes[nb].x;
                 double dy = nodes[i].y - nodes[nb].y;
                 double dist = sqrt(dx*dx + dy*dy);
@@ -147,27 +130,34 @@ int main() {
         }
     }
 
-    int start = 0;                     // start node
-    int goal = nodes.size() - 1;      // goal node
+    int start = 0;
+    int goal = nodes.size() - 1;
 
-    // run A* search
-    auto [path, cost] = astar(graph, nodes, start, goal);
+    // Timing start
+    auto t1 = high_resolution_clock::now();
 
-    // write results to file
-    if (path.empty()) {
-        out << "No path found\n";
-    } else {
-        out << "Path:\n";
+    auto [path, cost, ops] = astar(graph, nodes, start, goal);
 
-        for (int v : path)
-            out << v << " ";
+    // Timing end
+    auto t2 = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(t2 - t1).count();
 
-        out << "\nTotal cost: " << cost << "\n";
+    // Create dynamic filename
+    string filename = "results_" + to_string(nodes.size()) + ".csv";
+    ofstream out(filename);
+
+    if (!out) {
+        cout << "Error creating output file\n";
+        return 1;
     }
+
+    // Write CSV
+    out << "time_ms,basic_op_count,weight\n";
+    out << duration << "," << ops << "," << cost << "\n";
 
     out.close();
 
-    cout << "Done. Results written to results.txt\n";
+    cout << "Done. Results written to " << filename << "\n";
 
     return 0;
 }

@@ -36,6 +36,11 @@ bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edge
     points.clear();
     edges.clear();
 
+    string line;
+
+    // ✅ skip first line (node count)
+    getline(file, line);
+
     while (true) {
         Point p;
         int n1, n2, n3, n4;
@@ -116,21 +121,21 @@ int main() {
     vector<int> dist, pred;
     long long ops = 0;
 
-    // ⏱️ timing start
+    // ===================== TIMER =====================
     auto t1 = chrono::high_resolution_clock::now();
 
     bellmanFord(edges, n, SRC, dist, pred, ops);
 
-    // ⏱️ timing end
     auto t2 = chrono::high_resolution_clock::now();
 
-    long long duration =
-        chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    // ✅ FLOATING POINT MILLISECONDS
+    double duration_ms =
+        chrono::duration<double, milli>(t2 - t1).count();
 
-    int weight = dist[DST];
+    // ===================== SAFETY CHECK =====================
+    int weight = (dist[DST] == INT_MAX) ? -1 : dist[DST];
 
     // ===================== OUTPUT =====================
-
     string filename = "3_" + to_string(n) + ".txt";
     ofstream out(filename);
 
@@ -139,9 +144,8 @@ int main() {
         return 1;
     }
 
-    // STRICT FORMAT ONLY
     out << "time_ms,basic_op_count,weight\n";
-    out << duration << "," << ops << "," << weight << "\n";
+    out << duration_ms << "," << ops << "," << weight << "\n";
 
     out.close();
 

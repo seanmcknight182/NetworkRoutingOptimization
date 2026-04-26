@@ -33,7 +33,6 @@ algos:
 run: compile loop clean
 
 loop:
-	$(MAKE) run150
 	$(MAKE) run300
 	$(MAKE) run600
 	$(MAKE) run1200
@@ -41,7 +40,7 @@ loop:
 	$(MAKE) run4800
 	$(MAKE) run9600
 	$(MAKE) run19200
-
+	$(MAKE) run38400
 # ========================
 # HELPER MACRO (REPEATED PATTERN)
 # ========================
@@ -69,9 +68,6 @@ endef
 # ========================
 # SIZE TARGETS
 # ========================
-run150:
-	$(call RUN_SIZE,150)
-
 run300:
 	$(call RUN_SIZE,300)
 
@@ -93,11 +89,15 @@ run9600:
 run19200:
 	$(call RUN_SIZE,19200)
 
+run38400:
+	$(call RUN_SIZE,38400)
+
+
 # ========================
 # PYTHON
 # ========================
 #python:
-#	python script.py
+	python script.py
 
 # ========================
 # CLEAN

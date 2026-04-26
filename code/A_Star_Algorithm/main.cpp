@@ -18,20 +18,20 @@ const int ALGO_ID = 1;
 // Node structure
 struct Node {
     int id;
-    double x, y;
+    int x, y;  // use integers
 };
 
 // Edge structure
 struct Edge {
     int to;
-    double weight;
+    int weight;  // integer weights (Manhattan)
 };
 
 using Graph = vector<vector<Edge>>;
 
-// Heuristic (Euclidean distance)
+// Manhattan heuristic (NO floating point)
 double heuristic(const Node& a, const Node& b) {
-    return sqrt((a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y));
+    return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
 // A* with operation counting
@@ -110,15 +110,14 @@ int main() {
 
     file.close();
 
-    // Build graph
+    // Build graph using Manhattan distance
     Graph graph(nodes.size());
 
     for (int i = 0; i < nodes.size(); i++) {
         for (int nb : rawConnections[i]) {
             if (nb >= 0 && nb < nodes.size()) {
-                double dx = nodes[i].x - nodes[nb].x;
-                double dy = nodes[i].y - nodes[nb].y;
-                double dist = sqrt(dx*dx + dy*dy);
+                int dist = abs(nodes[i].x - nodes[nb].x) +
+                           abs(nodes[i].y - nodes[nb].y);
 
                 graph[i].push_back({nb, dist});
             }
@@ -128,14 +127,16 @@ int main() {
     int start = 0;
     int goal = nodes.size() - 1;
 
-    // Timing start
+    // High-resolution timing
     auto t1 = high_resolution_clock::now();
 
     auto [cost, ops] = astar(graph, nodes, start, goal);
 
-    // Timing end
     auto t2 = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(t2 - t1).count();
+
+    // Use microseconds → convert to milliseconds (floating point)
+    auto duration = duration_cast<microseconds>(t2 - t1).count();
+    double time_ms = duration / 1000.0;
 
     // Filename: (algo_id)_(num_points).txt
     string filename = to_string(ALGO_ID) + "_" + to_string(nodes.size()) + ".txt";
@@ -146,9 +147,10 @@ int main() {
         return 1;
     }
 
-    // EXACT required format
+    // Output format
     out << "time_ms,basic_op_count,weight\n";
-    out << duration << "," << ops << "," << cost << "\n";
+    out << fixed << setprecision(3);
+    out << time_ms << "," << ops << "," << cost << "\n";
 
     out.close();
 

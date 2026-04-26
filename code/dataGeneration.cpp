@@ -4,12 +4,11 @@
 #include <fstream>
 using namespace std;
 
-// generates 300 points from (0,0) to (99,104)
+// generates variable number of points from (0,0) to (variable/3 -1,variable/3 + 4)
 // ensures that all points are reachable by having 3 points for every x and every y
 // decides which verticies have edges by checking if 2 points have the same x or the same y, they have an edge
-// because this is in manhatten distance, the shortest path will always be 198 units, rather than sqrt(2) * 99
+// because this is in manhatten distance, the shortest path will always be ((variable/3-1))*2  units, rather than sqrt(2) * (variable-1) 
 // code written by Sean McKnight(AND IM NOT PROUD OF IT) for CSC 2400 design of algorithms
-
 
 
 // this class has 2 main functions, generatePoints() which makes the points and outputPoints() which dumps the points in .points.dat
@@ -26,7 +25,18 @@ struct pointStruc{
 	int touches4 = -1;	
 };
 
-void addEdge(int i, int i2){	//i is the index we are adding the edge to, i2 is the one we are adding
+
+	// our variables, not very many	
+	int nodes;			// varriable number of nodes.
+	pointStruc* theArray; 		// 3 points for every x, and for (most) y, added the extra space up top to prevent issue ng taken by points with same
+	int* writable;			// writable[i][0] is the original y value
+					// writable[i][1] is how many points have that y value
+					// writable[i][2-4] is the index in theArray[] that have this y value
+					// wouldve been better to make this a structure, but idk what I would name it
+					// this is for when randomly figuring out what y to put a point at
+					// having all the points with certain y values will make adding edges SOOOO much easier
+
+void addEdge(int i, int i2){		//i is the index we are adding the edge to, i2 is the one we are adding
 	if(theArray[i].touches1 == -1){
 		theArray[i].touches1 =i2;
 		return;
@@ -44,7 +54,7 @@ void addEdge(int i, int i2){	//i is the index we are adding the edge to, i2 is t
 		return;
 	}
 }
-int middleOfThree(int a, int b, int c) {
+int middleOfThree(int a, int b, int c) {	//thanks chat, this function would be a pain otherwise
 	if ((a <= b && b <= c) || (c <= b && b <= a))
         	return 2;
     	else if ((b <= a && a <= c) || (c <= a && a <= b))
@@ -52,20 +62,14 @@ int middleOfThree(int a, int b, int c) {
 	else
         	return 3;
 }
-		
 
-	pointStruc theArray[300];	// 3 points for every x, and for (most) y, added the extra space up top to prevent issue caused by all y values being taken by points with same
-					// x value, yes this is a cop out of a solution, and I am rather ashamed of it
-	int writable[105][5];		// writable[i][0] is the original y value
-					// writable[i][1] is how many points have that y value
-					// writable[i][2-4] is the index in theArray[] that have this y value
-					// wouldve been better to make this a structure, but idk what I would name it
-					// this is for when randomly figuring out what y to put a point at
-					// having all the points with certain y values will make adding edges SOOOO much easier
-	
+
 public: 
-	thePoints(){
-		for(int i = 0; i < 105; i++){
+	thePoints(int numOfNodes){
+		nodes = numOfNodes;
+		writable = new int[(nodes/3 + 5)][5];	
+		theArray = new pointStruc[nodes];	
+		for(int i = 0; i < ((nodes/3)+5); i++){		//this is for the y values
 			writable[i][0] = i;	// as previously defined this is the y value
 			writable[i][1] = 0;	// how many points have this y value
 			writable[i][2] = -1;	// index in theArray for point 1 with this
@@ -76,8 +80,8 @@ public:
 		}
 		theArray[0].xValue = 0;
 		theArray[0].yValue = 0;
-		theArray[299].xValue = 99;
-		theArray[299].yValue = 99;
+		theArray[nodes-1].xValue = ((nodes/3) -1);
+		theArray[nodes-1].yValue = ((nodes/3) -1);
 		writable[0][1] = 1;
 		writable[0][2] = 0;
 		writable[99][1] = 1;
@@ -90,7 +94,7 @@ public:
 		srand(time(0));
 		cout << "started to gen points";
 		int acceptableWritePos = 104;	// for use with writable
-		int writableIndex = writableIndex = rand() % 100;
+		int writableIndex = writableIndex = rand() % nodes;
 		int placeholder = 0; // for use in the ugly part's swapping
 		for(int i = 1; i < 299; i++){	// theArray[0] and [299] are preset to always be 0,0 and 99,99 respectively
 			theArray[i].xValue=i/3;
@@ -196,17 +200,17 @@ public:
 }
 	void outputPoints(){
 		ofstream theFile("thePoints.dat");
-		for(int i=0; i < 300; i++){
+		for(int i=0; i < nodes; i++){
 			theFile << theArray[i].xValue << " " << theArray[i].yValue << " "; 
 			theFile << theArray[i].touches1 << " " << theArray[i].touches2 << " " << theArray[i].touches3 << " " << theArray[i].touches4 << "\n";
 		}
 	}
 };
 
-int main() {
+int main(int, numberOfNodes) {
 	srand(time(0));
 
-	thePoints varName; // couldnt think of anything better to name it :(	
+	thePoints varName(numberOfNodes); // couldnt think of anything better to name it :(	
 	varName.generatePoints();
 	varName.outputPoints();
 	return 0;

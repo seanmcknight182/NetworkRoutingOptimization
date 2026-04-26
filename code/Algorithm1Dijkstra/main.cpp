@@ -5,124 +5,131 @@
 #include <limits>
 #include <queue>
 #include <algorithm>
+#include <vector>
+#include <bits/stdc++.h>
+#include <string>
+// had chatgpt refactor this, so technically the whole thing is the doing of chat gpt. We really are gonna be replaced by AI, arent we? God has abandoned the programmers for their
+// apostacy, millions must install templeOS. Terry Davis was right.
 
 
 using namespace std;
 
-// This was much easier than the data generation, translating from psuedo code is basically a nothing burger task.
-// ChudGPT was a big help
-
-const int N = 300;
-
 struct Point {
-	int x, y;
+    int x, y;
 };
 
 struct Edge {
-	int to;
-	int weight;
+    int to;
+    int weight;
 };
 
-int Distance( Point& a, Point& b) {	// because the points dont link on diagonals this is manhatten distance. Euclid can get lost!
- 	return abs(a.x - b.x) + abs(a.y - b.y);
+int Distance(const Point& a, const Point& b) {
+    return abs(a.x - b.x) + abs(a.y - b.y);
 }
-	
-Point points[N];
-Edge graph[N][N];     // worst-case adjacency
-int degree[N] = {0};   // number of edges per node
 
 int main() {
-	ifstream file("thePoints.dat");
-    	if (!file) {
-        	cerr << "Could not open file\n";
-        	return 1;
-    	}
+    ifstream file("thePoints.dat");
+    if (!file) {
+        cerr << "Could not open file\n";
+        return 1;
+    }
 
-	string line;
-
-   	// reading the file
-   	for (int i = 0; i < N; i++) {
-        	getline(file, line);
-        	stringstream ss(line);	// naming this variable that was probabbly a poor descision.
-
-        	ss >> points[i].x >> points[i].y;
-
-       		int neighbor;
-        	while (ss >> neighbor) {
-        	    graph[i][degree[i]++] = {neighbor, 0};
-        	}
-    	}
+    int basicOPCount = 0;
+    int totalWeight = 0;
+    //int totalDollars = 1000000000; // please, I need money so bad.
+    
+    int N;
+    file >> N;
 	
-	file.close(); // dont be a chump, close your files
-	
+    //cout << "N = " << N << "\n";
+    auto time1 = chrono::high_resolution_clock::now();	//starting the clock here
+    vector<Point> points(N);
+    vector<vector<Edge>> graph(N);
 
-	
-	// and now we compute the weights
-    	for (int i = 0; i < N; i++) {
-        	for (int j = 0; j < degree[i]; j++) {
-       	     		int v = graph[i][j].to;
-            		graph[i][j].weight = Distance(points[i], points[v]);
-		}
-	}
+    string line;
+    getline(file, line); // consume leftover newline
 
-    	// The algorithnm itself, the meat and the potatos if you will; God I love potatos. THANK YOU INDIGNOUS SOUTH AMERICANS.  
-	int start = 0;
-	int dist[N];
-	int parent[N];
-    	for (int i = 0; i < N; i++) {
-        dist[i] = numeric_limits<int>::max();
-        parent[i] = -1;
-    	}
-    	using P = pair<int,int>;
-    	priority_queue<P, vector<P>, greater<P>> pq;
-    	dist[start] = 0;
-    	pq.push({0, start});
-    	while (!pq.empty()) {
-        	auto [d, u] = pq.top();	// Danke Vater, apparently this is more optimized or something, to be frank(charlgemaine is that you??), i dont know what makes this better.
-        	pq.pop();
+    // Read points + adjacency lists
+    for (int i = 0; i < N; i++) {
+        getline(file, line);
+        stringstream ss(line);
+
+        ss >> points[i].x >> points[i].y;
+
+        int neighbor;
+        while (ss >> neighbor) {
+            graph[i].push_back({neighbor, 0});
+        }
+    }
+
+    file.close();
+
+    // Compute edge weights
+    for (int i = 0; i < N; i++) {
+        for (auto &edge : graph[i]) {
+            edge.weight = Distance(points[i], points[edge.to]);
+        }
+    }
+
+    // Dijkstra setup
+    int start = 0;
+    vector<int> dist(N, numeric_limits<int>::max());
+    vector<int> parent(N, -1);
+
+    using P = pair<int, int>;
+    priority_queue<P, vector<P>, greater<P>> pq;
+
+    dist[start] = 0;
+    pq.push({0, start});
+
+    while (!pq.empty()) {
+        auto [d, u] = pq.top();
+        pq.pop();
 
         if (d > dist[u]) continue;
 
- 		for (int i = 0; i < degree[u]; i++) {
-            		int v = graph[u][i].to;
-            		int w = graph[u][i].weight;
+        for (auto &edge : graph[u]) {
+            int v = edge.to;
+            int w = edge.weight;
+	//	basicOPCount++; // im tweaking trying to figure out where to put this thing dude
+            int nd = d + w;
 
-            		int nd = d + w;
+            if (nd < dist[v]) {
+                dist[v] = nd;
+                parent[v] = u;
+                pq.push({nd, v});
+            }
+        }
+    }
+	auto time2 = chrono::high_resolution_clock::now();	//ending the clock here
+	auto completionTime = chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count();	// in the voice of Smokey Bear "Only you can prevent namespace pollution!" 
+											// God, c++ is such a stupid language, why did we write this in c++ when we could've done it in c
+											// im not going insane at all, idk what you mean
+    // Output results
+    string theFileName= "0_";
+    theFileName = theFileName + to_string(N);
+    theFileName = theFileName + ".txt";
+    ofstream outputfile(theFileName);
 
-            		if (nd < dist[v]) {
-                		dist[v] = nd;
-                		parent[v] = u;
-                		pq.push({nd, v});
-            		}
-        	}
-    	}
+    int target = N - 1;
 
 
-	// the chud gpt output, tacked on after the fact beccause some dork forgot this.
-	//
-	// and it doesnt work the first time I try to compile it, chud gpt deserves its name.
-	
-	ofstream outputfile("results.txt");
-
-	int target = 299;	//it was using a variable which didnt exist?
+    	
     if (dist[target] == numeric_limits<int>::max()) {
-        cout << "No path exists from " << start << " to " << target << ".\n";
+        cout << "No path exists from " << start << " to " << target << ".\n";	// this realistically should never fire; the chud who wrote our data generator ensured this.
     } else {
         vector<int> path;
         for (int v = target; v != -1; v = parent[v]) {
             path.push_back(v);
         }
-        reverse(path.begin(), path.end());	// this didnt work either?? 
-
-        outputfile << "Path: \n";
-        for (size_t i = 0; i < path.size(); i++) {
-            outputfile << path[i] << " ";
+        reverse(path.begin(), path.end());
+	outputfile << "time_ms,basic_op_count,weight" << "\n";
+	outputfile << completionTime << "," << basicOPCount << "," << totalWeight;
+        //outputfile << "Path:\n";
+        //for (int v : path) {
+        //    outputfile << v << " ";
         }
-        outputfile << '\n';
-
-        outputfile << "Total cost: " << dist[target] << '\n';
-    }
-	outputfile.close();
-
-    return 0;
+        outputfile << "\n";	
+    	outputfile.close();
+	return 0;
 }

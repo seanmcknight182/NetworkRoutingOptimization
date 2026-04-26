@@ -76,7 +76,7 @@ public:
 			writable[i][2] = -1;	// index in theArray for point 1 with this
 			writable[i][3] = -1;	// for point 2
 			writable[i][4] = -1;	// for point 3
-			cout << writable[i][0] << "\n";
+			//cout << writable[i][0] << "\n";
 
 		}
 		theArray[0].xValue = 0;
@@ -93,7 +93,7 @@ public:
 	}
 	void generatePoints(){
 		srand(time(0));
-		cout << "started to gen points";
+		//cout << "started to gen points";
 		int acceptableWritePos = (nodes/3)+4;	// for use with writable
 		int writableIndex = writableIndex = rand() % nodes;
 		int placeholder = 0; // for use in the ugly part's swapping
@@ -198,9 +198,10 @@ public:
 					}
 			}
 		}
-}
+	}
 	void outputPoints(){
 		ofstream theFile("thePoints.dat");
+		theFile << nodes << endl;
 		for(int i=0; i < nodes; i++){
 			theFile << theArray[i].xValue << " " << theArray[i].yValue << " "; 
 			theFile << theArray[i].touches1 << " " << theArray[i].touches2 << " " << theArray[i].touches3 << " " << theArray[i].touches4 << "\n";
@@ -211,6 +212,7 @@ public:
 int main(int argc, char* argv[]) {	// argv[1] == number of nodes to generate
 	srand(time(0));
 	int numberOfNodes=atoi(argv[1]);
+//	cout << "error message 1";
 	thePoints varName(numberOfNodes); // couldnt think of anything better to name it :(	
 	varName.generatePoints();
 	varName.outputPoints();

@@ -3,7 +3,7 @@
     Date: 04/20/26
     Authors: ChatGPT and Eli DeSha
     Purpose: Uses the data generated from dataGeneration.cpp and runs it through the A*
-             alg to find the shortest path from the first node in the file to the last
+             algorithm to find the shortest path from the first node in the file to the last
              node in the file. The program then generates a results file indicating the
              shortest path and the total cost to get there.
 ****************************************************************************************/
@@ -18,18 +18,18 @@ const int ALGO_ID = 1;
 // Node structure
 struct Node {
     int id;
-    int x, y;  // use integers
+    int x, y;
 };
 
 // Edge structure
 struct Edge {
     int to;
-    int weight;  // integer weights (Manhattan)
+    int weight;
 };
 
 using Graph = vector<vector<Edge>>;
 
-// Manhattan heuristic (NO floating point)
+// Manhattan heuristic
 double heuristic(const Node& a, const Node& b) {
     return abs(a.x - b.x) + abs(a.y - b.y);
 }
@@ -92,7 +92,12 @@ int main() {
     vector<Node> nodes;
     vector<vector<int>> rawConnections;
 
-    // Read input
+    string line;
+
+    // ✅ SKIP FIRST LINE (important fix)
+    getline(file, line);
+
+    // Read graph data
     while (true) {
         int x, y, t1, t2, t3, t4;
 
@@ -113,9 +118,9 @@ int main() {
     // Build graph using Manhattan distance
     Graph graph(nodes.size());
 
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int i = 0; i < (int)nodes.size(); i++) {
         for (int nb : rawConnections[i]) {
-            if (nb >= 0 && nb < nodes.size()) {
+            if (nb >= 0 && nb < (int)nodes.size()) {
                 int dist = abs(nodes[i].x - nodes[nb].x) +
                            abs(nodes[i].y - nodes[nb].y);
 
@@ -127,18 +132,15 @@ int main() {
     int start = 0;
     int goal = nodes.size() - 1;
 
-    // High-resolution timing
+    // Timing
     auto t1 = high_resolution_clock::now();
-
     auto [cost, ops] = astar(graph, nodes, start, goal);
-
     auto t2 = high_resolution_clock::now();
 
-    // Use microseconds → convert to milliseconds (floating point)
     auto duration = duration_cast<microseconds>(t2 - t1).count();
     double time_ms = duration / 1000.0;
 
-    // Filename: (algo_id)_(num_points).txt
+    // Output file format: algoID_numPoints.txt
     string filename = to_string(ALGO_ID) + "_" + to_string(nodes.size()) + ".txt";
     ofstream out(filename);
 
@@ -147,7 +149,7 @@ int main() {
         return 1;
     }
 
-    // Output format
+    // STRICT OUTPUT FORMAT
     out << "time_ms,basic_op_count,weight\n";
     out << fixed << setprecision(3);
     out << time_ms << "," << ops << "," << cost << "\n";

@@ -12,6 +12,9 @@
 using namespace std;
 using namespace chrono;
 
+// Algorithm ID for A*
+const int ALGO_ID = 1;
+
 // Node structure
 struct Node {
     int id;
@@ -32,7 +35,7 @@ double heuristic(const Node& a, const Node& b) {
 }
 
 // A* with operation counting
-tuple<vector<int>, double, long long> astar(Graph& graph, vector<Node>& nodes, int start, int goal) {
+tuple<double, long long> astar(Graph& graph, vector<Node>& nodes, int start, int goal) {
     int n = graph.size();
 
     vector<double> g(n, 1e18);
@@ -54,15 +57,7 @@ tuple<vector<int>, double, long long> astar(Graph& graph, vector<Node>& nodes, i
         pq.pop();
 
         if (current == goal) {
-            vector<int> path;
-
-            for (int v = goal; v != -1; v = parent[v]) {
-                path.push_back(v);
-                ops++;
-            }
-
-            reverse(path.begin(), path.end());
-            return {path, g[goal], ops};
+            return {g[goal], ops};
         }
 
         for (auto &edge : graph[current]) {
@@ -83,7 +78,7 @@ tuple<vector<int>, double, long long> astar(Graph& graph, vector<Node>& nodes, i
         }
     }
 
-    return {{}, -1, ops};
+    return {-1, ops};
 }
 
 int main() {
@@ -136,14 +131,14 @@ int main() {
     // Timing start
     auto t1 = high_resolution_clock::now();
 
-    auto [path, cost, ops] = astar(graph, nodes, start, goal);
+    auto [cost, ops] = astar(graph, nodes, start, goal);
 
     // Timing end
     auto t2 = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(t2 - t1).count();
 
-    // Create dynamic filename
-    string filename = "results_" + to_string(nodes.size()) + ".csv";
+    // Filename: (algo_id)_(num_points).txt
+    string filename = to_string(ALGO_ID) + "_" + to_string(nodes.size()) + ".txt";
     ofstream out(filename);
 
     if (!out) {
@@ -151,7 +146,7 @@ int main() {
         return 1;
     }
 
-    // Write CSV
+    // EXACT required format
     out << "time_ms,basic_op_count,weight\n";
     out << duration << "," << ops << "," << cost << "\n";
 

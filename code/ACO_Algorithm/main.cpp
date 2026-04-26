@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <random>
+#include <chrono>
 #include <algorithm>
 
 using namespace std;
@@ -30,6 +31,9 @@ vector<Node> loadGraph(const string& filePath) {
 
     vector<Node> graph;
     string line;
+
+    // skip first line (N)
+    getline(file, line);
 
     while (getline(file, line)) {
         if (line.empty()) continue;
@@ -250,10 +254,10 @@ int main(int argc, char* argv[]) {
     AcoResult result = aco.run(ops);
     auto t2 = chrono::high_resolution_clock::now();
 
-    long long duration =
-        chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    // ✅ FIXED: floating-point milliseconds
+    chrono::duration<double, milli> duration = t2 - t1;
+    double time_ms = duration.count();
 
-    // REQUIRED filename format: 2_(num_points).txt
     string filename = "2_" + to_string(n) + ".txt";
     ofstream outFile(filename);
 
@@ -262,9 +266,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // STRICT FORMAT OUTPUT
     outFile << "time_ms,basic_op_count,weight\n";
-    outFile << duration << "," << ops << "," << result.totalCost << "\n";
+    outFile << time_ms << "," << ops << "," << result.totalCost << "\n";
 
     outFile.close();
 

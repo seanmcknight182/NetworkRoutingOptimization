@@ -4,7 +4,10 @@
 #include <climits>
 #include <chrono>
 #include <algorithm>
+
 using namespace std;
+
+// ===================== DATA STRUCTS =====================
 
 struct Point {
     int x, y;
@@ -15,24 +18,30 @@ struct Edge {
     int src, dst, weight;
 };
 
+// ===================== UTIL =====================
+
 int manhattanDist(const Point& a, const Point& b) {
     return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
+// ===================== GRAPH LOADING =====================
+
 bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edges) {
     ifstream file(filename);
     if (!file) {
-        cerr << "Error opening file: " << filename << "\n";
+        cerr << "Error opening file\n";
         return false;
     }
 
     points.clear();
+    edges.clear();
 
     while (true) {
         Point p;
         int n1, n2, n3, n4;
 
-        if (!(file >> p.x >> p.y >> n1 >> n2 >> n3 >> n4)) break;
+        if (!(file >> p.x >> p.y >> n1 >> n2 >> n3 >> n4))
+            break;
 
         if (n1 != -1) p.neighbors.push_back(n1);
         if (n2 != -1) p.neighbors.push_back(n2);
@@ -52,93 +61,91 @@ bool loadGraph(const string& filename, vector<Point>& points, vector<Edge>& edge
     return true;
 }
 
-bool bellmanFord(const vector<Point>& points,
-                 const vector<Edge>& edges,
-                 int src,
-                 vector<int>& dist,
-                 vector<int>& pred)
+// ===================== BELLMAN-FORD =====================
+
+int bellmanFord(const vector<Edge>& edges,
+                int V,
+                int src,
+                vector<int>& dist,
+                vector<int>& pred,
+                long long& ops)
 {
-    int V = points.size();
     dist.assign(V, INT_MAX);
     pred.assign(V, -1);
+
     dist[src] = 0;
 
     for (int i = 0; i < V - 1; i++) {
         bool updated = false;
 
         for (const Edge& e : edges) {
+            ops++;
+
             if (dist[e.src] == INT_MAX) continue;
 
             int nd = dist[e.src] + e.weight;
+
             if (nd < dist[e.dst]) {
                 dist[e.dst] = nd;
                 pred[e.dst] = e.src;
                 updated = true;
+                ops++;
             }
         }
 
         if (!updated) break;
     }
 
-    return true;
+    return 0;
 }
 
-vector<int> reconstructPath(const vector<int>& pred, int src, int dst) {
-    vector<int> path;
-
-    for (int cur = dst; cur != -1; cur = pred[cur]) {
-        path.push_back(cur);
-        if (cur == src) break;
-    }
-
-    reverse(path.begin(), path.end());
-
-    if (path.empty() || path[0] != src) return {};
-    return path;
-}
+// ===================== MAIN =====================
 
 int main() {
     vector<Point> points;
     vector<Edge> edges;
 
-    if (!loadGraph("thePoints.dat", points, edges)) return 1;
+    if (!loadGraph("thePoints.dat", points, edges))
+        return 1;
+
+    int n = points.size();
 
     int SRC = 0;
-    int DST = (int)points.size() - 1;
+    int DST = n - 1;
 
     vector<int> dist, pred;
+    long long ops = 0;
 
-    auto start = chrono::high_resolution_clock::now();
-    bellmanFord(points, edges, SRC, dist, pred);
-    auto end = chrono::high_resolution_clock::now();
+    // ⏱️ timing start
+    auto t1 = chrono::high_resolution_clock::now();
 
-    double ms = chrono::duration<double, milli>(end - start).count();
+    bellmanFord(edges, n, SRC, dist, pred, ops);
 
-    vector<int> path = reconstructPath(pred, SRC, DST);
+    // ⏱️ timing end
+    auto t2 = chrono::high_resolution_clock::now();
 
-    ofstream out("results.txt");
+    long long duration =
+        chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+
+    int weight = dist[DST];
+
+    // ===================== OUTPUT =====================
+
+    string filename = "3_" + to_string(n) + ".txt";
+    ofstream out(filename);
+
     if (!out) {
-        cerr << "Error writing results.txt\n";
+        cerr << "Error writing output file\n";
         return 1;
     }
 
-    out << "Path:\n";
-
-    int totalCost = 0;
-
-    if (!path.empty()) {
-        for (size_t i = 0; i < path.size(); i++) {
-            out << path[i] << " ";
-
-            if (i + 1 < path.size()) {
-                totalCost += manhattanDist(points[path[i]], points[path[i + 1]]);
-            }
-        }
-    }
-
-    out << "\nTotal cost: " << totalCost << "\n";
+    // STRICT FORMAT ONLY
+    out << "time_ms,basic_op_count,weight\n";
+    out << duration << "," << ops << "," << weight << "\n";
 
     out.close();
+
+    cout << "Done. Results written to " << filename << "\n";
 
     return 0;
 }
